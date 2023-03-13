@@ -78,7 +78,7 @@ process BWAMEM {
     }	
     if(params.debug == true){
     """
-    echo "seqtk mergepe $read1 $read2 | ${aln} mem -p -t $task.cpus -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2 > ${sampleId}.log.bwamem | k8 bwa-postalt.js -p ${sampleId}.hla ${params.ref}.alt | samtools view -1 - > ${sampleId}.aln.bam; "
+    echo "seqtk mergepe $read1 $read2 | ${aln} mem -p -t $task.cpus -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2> ${sampleId}.log.bwamem | k8 ${params.alt_js} -p ${sampleId}.hla ${params.ref}.alt | samtools view -1 - > ${sampleId}.aln.bam"
     echo "run-HLA ${sampleId}.hla > ${sampleId}.hla.top 2> ${sampleId}.log.hla;i"
     echo "touch ${sampleId}.hla.HLA-dummy.gt; cat ${sampleId}.hla.HLA*.gt | grep ^GT | cut -f2- > ${sampleId}.hla.all"
     echo "rm -f ${sampleId}.hla.HLA*;"
@@ -87,30 +87,29 @@ process BWAMEM {
     touch ${sampleId}.hla.all
     """
     }else{
-    if(params.hla == "true"){
+    if(params.hla == true){
     """
-	seqtk mergepe $read1 $read2  \
-  	| ${aln} mem -p -t $task.cpus -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2 > ${sampleId}.log.bwamem \
-  	| k8 bwa-postalt.js -p ${sampleId}.hla ${params.ref}.alt \
-  	| samtools view -1 - > ${sampleId}.aln.bam;
+	seqtk mergepe $read1 $read2 \\
+        | ${aln} mem -p -t $task.cpus -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2> ${sampleId}.log.bwamem \\
+        | k8 ${params.alt_js} -p ${sampleId}.hla ${params.ref}.alt | samtools view -1 - > ${sampleId}.aln.bam
 	run-HLA ${sampleId}.hla > ${sampleId}.hla.top 2> ${sampleId}.log.hla;
 	touch ${sampleId}.hla.HLA-dummy.gt; cat ${sampleId}.hla.HLA*.gt | grep ^GT | cut -f2- > ${sampleId}.hla.all;
 	rm -f ${sampleId}.hla.HLA*;
     """
     }
-    else if (params.alt == "true"){
+    else if (params.alt == true){
      """
-	seqtk mergepe $read1 $read2  \
-  	| ${aln} mem -p -t $task.cpus  -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2 > ${sampleId}.log.bwamem \
-  	| k8 bwa-postalt.js -p ${sampleId}.hla hs38DH.fa.alt \
+	seqtk mergepe $read1 $read2  \\
+  	| ${aln} mem -p -t $task.cpus  -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2> ${sampleId}.log.bwamem \\
+  	| k8 ${params.alt_js} -p ${sampleId}.hla hs38DH.fa.alt \\
   	| samtools view -1 - > ${sampleId}.aln.bam
      """	
     } else{
 	//normal mapping mode
      """
-	seqtk mergepe $read1 $read2 \
-  	| ${aln} mem -p -t $task.cpus  -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2 > ${sampleId}.log.bwamem \
-  	| samtools view -1 - > ${sampleId}.aln.bam
+	seqtk mergepe $read1 $read2 \\
+  	| ${aln} mem -p -t $task.cpus  -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2> ${sampleId}.log.bwamem \\
+        | samtools view -1 - > ${sampleId}.aln.bam
      """	
     }
     }
@@ -137,9 +136,9 @@ process ELPREP {
     
     if(params.debug == true){
     """
-    echo elprep sfm ${bam} ${sampleId}.out.bam --mark-duplicates --mark-optical-duplicates ${sampleId}.output.metrics \
-        --sorting-order coordinate \
-        --bqsr  ${sampleId}.output.recal --known-sites ${params.dbsnp},${params.dbindel} \
+    echo elprep sfm ${bam} ${sampleId}.out.bam --mark-duplicates --mark-optical-duplicates ${sampleId}.output.metrics \\
+        --sorting-order coordinate \\
+        --bqsr  ${sampleId}.output.recal --known-sites ${params.dbsnp},${params.dbindel} \\
         --reference ${params.elpre_ref}  --nr-of-threads $task.cpus
     echo samtools index ${sampleId}.out.bam
     #output files
@@ -151,17 +150,17 @@ process ELPREP {
     }else{
     if(params.bqsr == true){
     """
-    elprep sfm ${bam} ${sampleId}.out.bam --mark-duplicates --mark-optical-duplicates ${sampleId}.output.metrics \
-        --sorting-order coordinate \
-        --bqsr  ${sampleId}.output.recal --known-sites ${params.dbsnp},${params.dbindel} \
+    elprep sfm ${bam} ${sampleId}.out.bam --mark-duplicates --mark-optical-duplicates ${sampleId}.output.metrics \\
+        --sorting-order coordinate \\
+        --bqsr  ${sampleId}.output.recal --known-sites ${params.dbsnp},${params.dbindel} \\
         --reference ${params.elpre_ref}  --nr-of-threads $task.cpus
     samtools index ${sampleId}.out.bam
     """
    }
    else{
     """
-    elprep sfm ${bam} ${sampleId}.out.bam --mark-duplicates --mark-optical-duplicates ${sampleId}.output.metrics \
-        --sorting-order coordinate \
+    elprep sfm ${bam} ${sampleId}.out.bam --mark-duplicates --mark-optical-duplicates ${sampleId}.output.metrics \\
+        --sorting-order coordinate \\
         --reference ${params.elpre_ref}  --nr-of-threads $task.cpus
     #we index the resulting bam file
     samtools index ${sampleId}.out.bam
