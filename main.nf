@@ -46,7 +46,8 @@ process FASTQC {
     """
     } else{
     """
-     fastqc -t $task.cpus -o ${sampleId}.fastqc $read1 $read2
+    mkdir -p ${sampleId}.fastqc
+    fastqc -t $task.cpus -o ${sampleId}.fastqc $read1 $read2
     """
     }
     
@@ -88,9 +89,9 @@ process BWAMEM {
     }else{
     if(params.hla == "true"){
     """
-	seqtk mergepe ${reads}  \
-  	| ${aln} mem -p -t $task.cpus -R'@RG\tID:${sampleId}\tSM:ILL' ${ref} - 2 > ${sampleId}.log.bwamem \
-  	| k8 bwa-postalt.js -p ${sampleId}.hla ${ref}.alt \
+	seqtk mergepe $read1 $read2  \
+  	| ${aln} mem -p -t $task.cpus -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2 > ${sampleId}.log.bwamem \
+  	| k8 bwa-postalt.js -p ${sampleId}.hla ${params.ref}.alt \
   	| samtools view -1 - > ${sampleId}.aln.bam;
 	run-HLA ${sampleId}.hla > ${sampleId}.hla.top 2> ${sampleId}.log.hla;
 	touch ${sampleId}.hla.HLA-dummy.gt; cat ${sampleId}.hla.HLA*.gt | grep ^GT | cut -f2- > ${sampleId}.hla.all;
@@ -99,16 +100,16 @@ process BWAMEM {
     }
     else if (params.alt == "true"){
      """
-	seqtk mergepe ${reads}  \
-  	| ${aln} mem -p -t $task.cpus  -R'@RG\tID:${sampleId}\tSM:ILL' ${ref} - 2 > ${sampleId}.log.bwamem \
+	seqtk mergepe $read1 $read2  \
+  	| ${aln} mem -p -t $task.cpus  -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2 > ${sampleId}.log.bwamem \
   	| k8 bwa-postalt.js -p ${sampleId}.hla hs38DH.fa.alt \
   	| samtools view -1 - > ${sampleId}.aln.bam
      """	
     } else{
 	//normal mapping mode
      """
-	seqtk mergepe ${reads}  \
-  	| ${aln} mem -p -t $task.cpus  -R'@RG\tID:${sampleId}\tSM:ILL' ${ref} - 2 > ${sampleId}.log.bwamem \
+	seqtk mergepe $read1 $read2 \
+  	| ${aln} mem -p -t $task.cpus  -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2 > ${sampleId}.log.bwamem \
   	| samtools view -1 - > ${sampleId}.aln.bam
      """	
     }
