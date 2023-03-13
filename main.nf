@@ -86,7 +86,7 @@ process BWAMEM {
     touch ${sampleId}.hla.all
     """
     }else{
-    if(param.hla == "true"){
+    if(params.hla == "true"){
     """
 	seqtk mergepe ${reads}  \
   	| ${aln} mem -p -t $task.cpus -R'@RG\tID:${sampleId}\tSM:ILL' ${ref} - 2 > ${sampleId}.log.bwamem \
@@ -97,7 +97,7 @@ process BWAMEM {
 	rm -f ${sampleId}.hla.HLA*;
     """
     }
-    else if (param.alt == "true"){
+    else if (params.alt == "true"){
      """
 	seqtk mergepe ${reads}  \
   	| ${aln} mem -p -t $task.cpus  -R'@RG\tID:${sampleId}\tSM:ILL' ${ref} - 2 > ${sampleId}.log.bwamem \

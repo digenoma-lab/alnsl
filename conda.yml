@@ -8,3 +8,5 @@ dependencies:
   - samtools
   - elprep
   - mosdepth
+  - qualimap
+  - fastqc
