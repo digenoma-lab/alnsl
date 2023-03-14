@@ -78,8 +78,8 @@ process BWAMEM {
     }	
     if(params.debug == true){
     """
-    echo "seqtk mergepe $read1 $read2 | ${aln} mem -p -t $task.cpus -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2> ${sampleId}.log.bwamem | k8 ${params.alt_js} -p ${sampleId}.hla ${params.ref}.alt | samtools view -1 - > ${sampleId}.aln.bam"
-    echo "run-HLA ${sampleId}.hla > ${sampleId}.hla.top 2> ${sampleId}.log.hla;i"
+    echo "seqtk mergepe $read1 $read2 | ${aln} mem -p -t $task.cpus -R'@RG\\tID:${sampleId}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}.log.bwamem | k8 ${params.alt_js} -p ${sampleId}.hla ${params.ref}.alt | samtools view --no-PG -1 - > ${sampleId}.aln.bam"
+    echo "run-HLA ${sampleId}.hla > ${sampleId}.hla.top 2> ${sampleId}.log.hla;"
     echo "touch ${sampleId}.hla.HLA-dummy.gt; cat ${sampleId}.hla.HLA*.gt | grep ^GT | cut -f2- > ${sampleId}.hla.all"
     echo "rm -f ${sampleId}.hla.HLA*;"
     touch ${sampleId}.aln.bam
@@ -90,7 +90,7 @@ process BWAMEM {
     if(params.hla == true){
     """
 	seqtk mergepe $read1 $read2 \\
-        | ${aln} mem -p -t $task.cpus -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2> ${sampleId}.log.bwamem \\
+        | ${aln} mem -p -t $task.cpus -R'@RG\\tID:${sampleId}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}.log.bwamem \\
         | k8 ${params.alt_js} -p ${sampleId}.hla ${params.ref}.alt | samtools view -1 - > ${sampleId}.aln.bam
 	run-HLA ${sampleId}.hla > ${sampleId}.hla.top 2> ${sampleId}.log.hla;
 	touch ${sampleId}.hla.HLA-dummy.gt; cat ${sampleId}.hla.HLA*.gt | grep ^GT | cut -f2- > ${sampleId}.hla.all;
@@ -100,19 +100,19 @@ process BWAMEM {
     else if (params.alt == true){
      """
 	seqtk mergepe $read1 $read2  \\
-  	| ${aln} mem -p -t $task.cpus  -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2> ${sampleId}.log.bwamem \\
+  	| ${aln} mem -p -t $task.cpus  -R'@RG\\tID:${sampleId}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}.log.bwamem \\
   	| k8 ${params.alt_js} -p ${sampleId}.hla hs38DH.fa.alt \\
   	| samtools view -1 - > ${sampleId}.aln.bam
      """	
-    } else{
+    }else{
 	//normal mapping mode
      """
 	seqtk mergepe $read1 $read2 \\
-  	| ${aln} mem -p -t $task.cpus  -R'@RG\tID:${sampleId}\tSM:ILL' ${params.ref} - 2> ${sampleId}.log.bwamem \\
+  	| ${aln} mem -p -t $task.cpus  -R'@RG\\tID:${sampleId}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}.log.bwamem \\
         | samtools view -1 - > ${sampleId}.aln.bam
      """	
     }
-    }
+  }
 
 }
 
@@ -247,13 +247,13 @@ process DEPTH{
     script:
     if(params.debug == true){
     """
-    echo mosdepth -t $task.cpus ${sampleId}.depth $cram
+    echo mosdepth -f ${params.ref} -t $task.cpus ${sampleId}.depth $cram
     touch ${sampleId}.depth.mosdepth.dist.txt
     touch ${sampleId}.depth.mosdepth.summary.txt
     """
     }else{
     """
-    mosdepth -t $task.cpus ${sampleId}.depth $cram
+    mosdepth -f ${params.ref} -t $task.cpus ${sampleId}.depth $cram
     """
     }   
 }

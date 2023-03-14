@@ -2,5 +2,5 @@ dbsnp: /mnt/beegfs/labs/DiGenomaLab/databases/references/human/GATK_Bundle/Homo_
 dbindel: /mnt/beegfs/labs/DiGenomaLab/databases/references/human/GATK_Bundle/Mills_and_1000G_gold_standard.indels.hg38.elsites
 ref: /mnt/beegfs/labs/DiGenomaLab/databases/references/human/bwa2/hs38DH.fa
 elpre_ref: /mnt/beegfs/labs/DiGenomaLab/databases/references/human/hs38DH.fa.elfasta
-alt_js : /mnt/beegfs/home/adigenova/micromamba/envs/aln/bin/bwa-postalt.js
- 
+alt_js: /mnt/beegfs/home/adigenova/micromamba/envs/aln/bin/bwa-postalt.js
+bqsr: true
