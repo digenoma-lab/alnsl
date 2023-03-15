@@ -1,4 +1,4 @@
-# aln
+# alnsl
 
 A nextflow pipeline for alignment of short WGS reads.
 
@@ -64,9 +64,9 @@ in case of failure use:
 nextflow run main.nf --csv reads.cvs -profile uoh -params-file aln-params.yml -resume
 ```
 
-that will generate directory called ***results***
+that will generate a directory called ***results***
 
-## Creating an agrregated result
+## Creating an aggregated report
 
 To create an aggregated report across all the samples, is possible to run multiqc on the result directory:
 
