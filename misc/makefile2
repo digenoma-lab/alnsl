@@ -1,0 +1,21 @@
+.DELETE_ON_ERROR:
+
+dbsnp:=/mnt/beegfs/labs/DiGenomaLab/databases/references/human/GATK_Bundle/Homo_sapiens_assembly38.dbsnp138.elsites
+indel:=/mnt/beegfs/labs/DiGenomaLab/databases/references/human/GATK_Bundle/Mills_and_1000G_gold_standard.indels.hg38.elsites
+ref:=/mnt/beegfs/labs/DiGenomaLab/databases/references/human/hs38DH.fa
+
+test2.aln.bam:
+	/mnt/beegfs/home/adigenova/micromamba/envs/aln/bin/seqtk mergepe reads/B0873IM_R1_FKDN230059971.merge.1.fq.gz  reads/B0873IM_R1_FKDN230059971.merge.2.fq.gz  \
+  	| /mnt/beegfs/home/adigenova/micromamba/envs/aln/bin/bwa-mem2 mem -p -t 14 -R'@RG\tID:sampe\tSM:bar' /mnt/beegfs/labs/DiGenomaLab/databases/references/human/bwa2/hs38DH.fa - 2> test2.log.bwamem \
+  	| /mnt/beegfs/home/adigenova/micromamba/envs/aln/bin/k8 /mnt/beegfs/home/adigenova/micromamba/envs/aln/bin/bwa-postalt.js -p test2.hla /mnt/beegfs/labs/DiGenomaLab/databases/references/human/hs38DH.fa.alt \
+  	| /mnt/beegfs/home/adigenova/micromamba/envs/aln/bin/samtools view -1 - > test2.aln.bam;
+	/mnt/beegfs/home/adigenova/micromamba/envs/aln/bin/run-HLA test2.hla > test2.hla.top 2> test2.log.hla;
+	touch test2.hla.HLA-dummy.gt; cat test2.hla.HLA*.gt | grep ^GT | cut -f2- > test2.hla.all;
+	rm -f test2.hla.HLA*;
+test2.out.bam: test2.aln.bam
+	elprep sfm $< $@ --mark-duplicates --mark-optical-duplicates test2.output.metrics \
+	--sorting-order coordinate \
+	--bqsr test2.output.recal --known-sites ${dbsnp},${indel} \
+	--reference ${ref}.elfasta  --nr-of-threads 14
+	
+all : test2.out.bam
