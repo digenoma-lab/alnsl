@@ -31,23 +31,23 @@ process FASTQC {
     publishDir "$params.outdir/QC/FASTQC", mode: "copy"
 
     input:
-    tuple val(sampleId), file(read1), file(read2)
+    tuple val(sampleId), val(part), file(read1), file(read2)
 
     output:
-    path("${sampleId}.fastqc"), emit: fqc 
+    path("${sampleId}-${part}.fastqc"), emit: fqc 
 
     script:
     if(params.debug == true){
     """
-    echo fastqc -o ${sampleId}.fastqc $read1 $read2
-    mkdir -p ${sampleId}.fastqc
-    touch ${sampleId}.fastqc/report.fastqc
+    echo fastqc -o ${sampleId}-${part}.fastqc $read1 $read2
+    mkdir -p ${sampleId}-${part}.fastqc
+    touch ${sampleId}-${part}.fastqc/report.fastqc
     
     """
     } else{
     """
-    mkdir -p ${sampleId}.fastqc
-    fastqc -t $task.cpus -o ${sampleId}.fastqc $read1 $read2
+    mkdir -p ${sampleId}-${part}.fastqc
+    fastqc -t $task.cpus -o ${sampleId}-${part}.fastqc $read1 $read2
     """
     }
     
@@ -62,13 +62,13 @@ process BWAMEM {
     publishDir "$params.outdir/BWA/HLA", mode: "copy", pattern: '*.hla.all'
 
     input:
-    tuple val(sampleId), file(read1), file(read2)
+    tuple val(sampleId), val(part), file(read1), file(read2)
 
     output:
-    tuple val("${sampleId}"), file("${sampleId}.aln.bam"), emit: bams
-    path("${sampleId}.log.bwamem") 
-    path("${sampleId}.hla.all") , optional: true
-    path("${sampleId}.log.hla") , optional: true
+    tuple val("${sampleId}"), val("${part}"), file("${sampleId}-${part}.aln.bam"), emit: bams
+    path("${sampleId}-${part}.log.bwamem") 
+    path("${sampleId}-${part}.hla.all") , optional: true
+    path("${sampleId}-${part}.log.hla") , optional: true
  
    script:
     def aln="bwa-mem2" 
@@ -78,43 +78,69 @@ process BWAMEM {
     }	
     if(params.debug == true){
     """
-    echo "seqtk mergepe $read1 $read2 | ${aln} mem -p -t $task.cpus -R'@RG\\tID:${sampleId}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}.log.bwamem | k8 ${params.alt_js} -p ${sampleId}.hla ${params.ref}.alt | samtools view --no-PG -1 - > ${sampleId}.aln.bam"
-    echo "run-HLA ${sampleId}.hla > ${sampleId}.hla.top 2> ${sampleId}.log.hla;"
-    echo "touch ${sampleId}.hla.HLA-dummy.gt; cat ${sampleId}.hla.HLA*.gt | grep ^GT | cut -f2- > ${sampleId}.hla.all"
-    echo "rm -f ${sampleId}.hla.HLA*;"
-    touch ${sampleId}.aln.bam
-    touch ${sampleId}.log.bwamem
-    touch ${sampleId}.hla.all
+    echo "seqtk mergepe $read1 $read2 | ${aln} mem -p -t $task.cpus -R'@RG\\tID:${sampleId}-${part}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}-${part}.log.bwamem | k8 ${params.alt_js} -p ${sampleId}-${part}.hla ${params.ref}.alt | samtools view -1 - > ${sampleId}-${part}.aln.bam"
+    echo "run-HLA ${sampleId}-${part}.hla > ${sampleId}-${part}.hla.top 2> ${sampleId}-${part}.log.hla;"
+    echo "touch ${sampleId}-${part}.hla.HLA-dummy.gt; cat ${sampleId}-${part}.hla.HLA*.gt | grep ^GT | cut -f2- > ${sampleId}-${part}.hla.all"
+    echo "rm -f ${sampleId}-${part}.hla.HLA*;"
+    touch ${sampleId}-${part}.aln.bam
+    touch ${sampleId}-${part}.log.bwamem
+    touch ${sampleId}-${part}.hla.all
     """
     }else{
     if(params.hla == true){
     """
 	seqtk mergepe $read1 $read2 \\
-        | ${aln} mem -p -t $task.cpus -R'@RG\\tID:${sampleId}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}.log.bwamem \\
-        | k8 ${params.alt_js} -p ${sampleId}.hla ${params.ref}.alt | samtools view -1 - > ${sampleId}.aln.bam
-	run-HLA ${sampleId}.hla > ${sampleId}.hla.top 2> ${sampleId}.log.hla;
-	touch ${sampleId}.hla.HLA-dummy.gt; cat ${sampleId}.hla.HLA*.gt | grep ^GT | cut -f2- > ${sampleId}.hla.all;
-	rm -f ${sampleId}.hla.HLA*;
+        | ${aln} mem -p -t $task.cpus -R'@RG\\tID:${sampleId}-${part}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}-${part}.log.bwamem \\
+        | k8 ${params.alt_js} -p ${sampleId}-${part}.hla ${params.ref}.alt | samtools view -1 - > ${sampleId}-${part}.aln.bam
+	run-HLA ${sampleId}-${part}.hla > ${sampleId}-${part}.hla.top 2> ${sampleId}-${part}.log.hla;
+	touch ${sampleId}-${part}.hla.HLA-dummy.gt; cat ${sampleId}-${part}.hla.HLA*.gt | grep ^GT | cut -f2- > ${sampleId}-${part}.hla.all;
+	rm -f ${sampleId}-${part}.hla.HLA*;
     """
     }
     else if (params.alt == true){
      """
 	seqtk mergepe $read1 $read2  \\
-  	| ${aln} mem -p -t $task.cpus  -R'@RG\\tID:${sampleId}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}.log.bwamem \\
-  	| k8 ${params.alt_js} -p ${sampleId}.hla hs38DH.fa.alt \\
-  	| samtools view -1 - > ${sampleId}.aln.bam
+  	| ${aln} mem -p -t $task.cpus  -R'@RG\\tID:${sampleId}-${part}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}-${part}.log.bwamem \\
+  	| k8 ${params.alt_js} -p ${sampleId}-${part}.hla hs38DH.fa.alt \\
+  	| samtools view -1 - > ${sampleId}-${part}.aln.bam
      """	
     }else{
 	//normal mapping mode
      """
 	seqtk mergepe $read1 $read2 \\
-  	| ${aln} mem -p -t $task.cpus  -R'@RG\\tID:${sampleId}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}.log.bwamem \\
-        | samtools view -1 - > ${sampleId}.aln.bam
+  	| ${aln} mem -p -t $task.cpus  -R'@RG\\tID:${sampleId}-${part}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}-${part}.log.bwamem \\
+        | samtools view -1 - > ${sampleId}-${part}.aln.bam
      """	
     }
   }
 
 }
+
+//merge bams by sample
+process MERGEB{
+
+  tag "$sampleId-merge"
+
+  input:
+  tuple val(sampleId), val(parts), file(bamFiles)
+
+  output:
+  tuple val(sampleId), file("${sampleId}.merged.bam") ,emit: mbams
+
+  script:
+    
+  if(params.debug == true){
+  """
+    echo samtools merge -@ $task.cpus -f ${sampleId}.merged.bam ${bamFiles}
+    touch ${sampleId}.merged.bam
+  """
+  }else{
+  """
+  samtools merge -@ $task.cpus -f ${sampleId}.merged.bam ${bamFiles}
+  """
+  }
+}
+
 
 //we do preproces the bam file
 process ELPREP {
@@ -273,7 +299,7 @@ workflow {
     //we reads pairs from csv
     read_pairs_ch=Channel.fromPath(params.csv) \
         | splitCsv(header:true) \
-        | map { row-> tuple(row.sampleId, file(row.read1), file(row.read2)) }
+        | map { row-> tuple(row.sampleId, row.part,  file(row.read1), file(row.read2)) }
     }else{
         println "Error: reads regex or path"
     }
@@ -284,8 +310,13 @@ workflow {
     FASTQC(read_pairs_ch)
     //read aligment alt/hla
     BWAMEM(read_pairs_ch)
+    //we do merge the bams by sample ID
+    groups=BWAMEM.out.bams.groupTuple(by: 0)
+    //groups.view()
+    MERGEB(groups)
+    //MERGEB.out.mbams.view()
     //bam procesisng sort/duplciates/bqrs
-    ELPREP(BWAMEM.out.bams)
+    ELPREP(MERGEB.out.mbams)
     //Quality of alignments
     QUALIMAP(ELPREP.out.bams)
     //BAM->CRAM conversion
