@@ -304,7 +304,7 @@ workflow {
         println "Error: reads regex or path"
     }
 
-    read_pairs_ch.view()
+   // read_pairs_ch.view()
     //ref = path(params.ref)
     //fastqc read quality
     FASTQC(read_pairs_ch)
