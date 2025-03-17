@@ -128,7 +128,19 @@ process MERGEB{
   tuple val(sampleId), file("${sampleId}.merged.bam") ,emit: mbams
 
   script:
-    
+   def filesb = bamFiles instanceof List ? bamFiles : [bamFiles]
+  if ( filesb.size() == 1 ) {
+	if ( params.debug == true ) {
+                """
+                echo ln -s ${bamFiles[0]} ${sampleId}.merged.bam
+                touch ${sampleId}.merged.bam
+                """
+            } else {
+                """
+                ln -s ${bamFiles[0]} ${sampleId}.merged.bam
+                """
+            }
+  }else{    
   if(params.debug == true){
   """
     echo samtools merge -@ $task.cpus -f ${sampleId}.merged.bam ${bamFiles}
@@ -139,6 +151,7 @@ process MERGEB{
   samtools merge -@ $task.cpus -f ${sampleId}.merged.bam ${bamFiles}
   """
   }
+ }
 }
 
 
@@ -181,6 +194,7 @@ process ELPREP {
         --bqsr  ${sampleId}.output.recal --known-sites ${params.dbsnp},${params.dbindel} \\
         --reference ${params.elpre_ref}  --nr-of-threads $task.cpus
     samtools index ${sampleId}.out.bam
+    #rm -f `readlink -f ${bam}`
     """
    }
    else{
@@ -190,6 +204,7 @@ process ELPREP {
         --reference ${params.elpre_ref}  --nr-of-threads $task.cpus
     #we index the resulting bam file
     samtools index ${sampleId}.out.bam
+    #rm -f `readlink -f ${bam}`
     """
     }
    }
@@ -312,7 +327,7 @@ workflow {
     BWAMEM(read_pairs_ch)
     //we do merge the bams by sample ID
     groups=BWAMEM.out.bams.groupTuple(by: 0)
-    //groups.view()
+   // groups.view()
     MERGEB(groups)
     //MERGEB.out.mbams.view()
     //bam procesisng sort/duplciates/bqrs
