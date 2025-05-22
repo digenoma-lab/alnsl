@@ -92,18 +92,18 @@ process BWAMEM {
 	seqtk mergepe $read1 $read2 \\
         | ${aln} mem -p -t $task.cpus -R'@RG\\tID:${sampleId}-${part}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}-${part}.log.bwamem \\
         | k8 ${params.alt_js} -p ${sampleId}-${part}.hla ${params.ref}.alt | samtools view -1 - > ${sampleId}-${part}.aln.bam
-	run-HLA ${sampleId}-${part}.hla > ${sampleId}-${part}.hla.top 2> ${sampleId}-${part}.log.hla;
+	run-HLA ${sampleId}-${part}.hla.${sampleId}-${part}.hla > ${sampleId}-${part}.hla.top 2> ${sampleId}-${part}.log.hla;
 	touch ${sampleId}-${part}.hla.HLA-dummy.gt; cat ${sampleId}-${part}.hla.HLA*.gt | grep ^GT | cut -f2- > ${sampleId}-${part}.hla.all;
 	rm -f ${sampleId}-${part}.hla.HLA*;
     """
     }
     else if (params.alt == true){
-     """
+    """
 	seqtk mergepe $read1 $read2  \\
   	| ${aln} mem -p -t $task.cpus  -R'@RG\\tID:${sampleId}-${part}\\tSM:${sampleId}\\tPL:ill' ${params.ref} - 2> ${sampleId}-${part}.log.bwamem \\
   	| k8 ${params.alt_js} -p ${sampleId}-${part}.hla hs38DH.fa.alt \\
   	| samtools view -1 - > ${sampleId}-${part}.aln.bam
-     """	
+     """
     }else{
 	//normal mapping mode
      """
@@ -258,7 +258,7 @@ process B2C{
     """
     echo samtools view -C -T ${params.ref} $bam -o ${sampleId}.out.cram
     echo samtools index ${sampleId}.out.cram
-    echo samtools flagstats  ${sampleId}.out.cram > ${sampleId}.out.flagstat
+    echo samtools flagstat  ${sampleId}.out.cram > ${sampleId}.out.flagstat
     touch ${sampleId}.out.cram 
     touch ${sampleId}.out.cram.crai
     touch ${sampleId}.out.flagstat
@@ -267,7 +267,7 @@ process B2C{
     """
     samtools view -C -T ${params.ref} $bam -o ${sampleId}.out.cram -@ $task.cpus
     samtools index ${sampleId}.out.cram
-    samtools flagstats  ${sampleId}.out.cram > ${sampleId}.out.flagstat
+    samtools flagstat  ${sampleId}.out.cram > ${sampleId}.out.flagstat
     """
     }   
 }
